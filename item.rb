@@ -14,8 +14,7 @@ class Item
     :requires, 
     :cyclone_effects, 
     :url, 
-    :image_url, 
-    :raw, 
+    :image_url,
     :body
   attr_reader :errors
   

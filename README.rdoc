@@ -1,0 +1,20 @@
+= Heroes of Newerth Database
+
+== Item and Item Fetcher
+
+This currently retrieves all the items and their details from http://heroes-newerth.com/items and tries to parse the relevant stats from the detail pages.
+Since the source is a WordPress blog, the structure of the documents and their formatting isn't consistent, which makes it harder to parse the details.
+As a result of this, there is quite some hacky code in the item parser, and some details are still missing.
+
+
+=== ToDo
+
+ * Find out and fix why parsing "http://heroes-newerth.com/item/Ward-of-Revelation" causes an error.
+ * Cache all the retrieved pages locally.
+ * Store the item details in a database (CouchDB?).
+ * Update the database with more accurate in-game stats.
+ * Rename Item#requires to Item#required_items.
+ * Add 'Used in' based on the found 'Required items'.
+ * Add search criteria.
+
+Copyright (c) 2009 Filip H.F. "FiXato" Slagter, released under the MIT license

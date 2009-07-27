@@ -34,7 +34,7 @@ class ItemsFetcher
       <meta charset="utf-8" />
       <title>Heroes of Newerth Items</title>
       <link rel="stylesheet" type="text/css" href="screen.css" />
-      <script type="text/javascript" href="hon.js"></script>
+      <script type="text/javascript" src="hon.js"></script>
     </head>
     <body>
       <h1 id="hon_items">Heroes of Newerth Items</h1>

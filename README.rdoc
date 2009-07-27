@@ -25,6 +25,16 @@ And to get a specific item, find its detail page url and feed it as such:
 
 * Find out and fix why parsing "http://heroes-newerth.com/item/Ward-of-Revelation" causes an error.
 * Cache all the retrieved pages locally.
+* Add support for:
+ * (Transmute/Crazed/Phazed/Insanitarius/*) Effects
+ * On Attack/On Attach Impact
+ * Channeling Time
+ * Aura
+ * Cooldown
+ * Mana cost
+ * Range
+ * Deals * damage
+ * Target Unit
 * Store the item details in a database (CouchDB?).
 * Update the database with more accurate in-game stats.
 * Rename Item#requires to Item#required_items.

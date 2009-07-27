@@ -1,0 +1,21 @@
+#!/usr/bin/env ruby
+require 'items_fetcher'
+
+item_fetcher = ItemsFetcher.new
+if item = ARGV.shift
+  if item == 'first'
+    item_fetcher.get_first_item
+  else
+    item_fetcher.get_item(item)
+  end
+else
+  item_fetcher.get_items
+end
+
+# item_fetcher.get_item("http://heroes-newerth.com/items/sacrificial-stone")
+# item_fetcher.get_item("http://heroes-newerth.com/item/Nullstone")
+# item_fetcher.get_item("http://heroes-newerth.com/item/Restoration-Stone")
+# item_fetcher.get_item("http://heroes-newerth.com/items/storm-spirit")
+# item_fetcher.get_item("http://heroes-newerth.com/item/Puzzlebox")
+# item_fetcher.get_item("http://heroes-newerth.com/item/Ward-of-Revelation")
+puts item_fetcher.to_html

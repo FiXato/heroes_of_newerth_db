@@ -16,5 +16,6 @@ As a result of this, there is quite some hacky code in the item parser, and some
  * Rename Item#requires to Item#required_items.
  * Add 'Used in' based on the found 'Required items'.
  * Add search criteria.
+ * Replace the rick-roll videos in the HackSlash item with links to the proper Hack and Slash items.
 
 Copyright (c) 2009 Filip H.F. "FiXato" Slagter, released under the MIT license

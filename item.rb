@@ -162,7 +162,7 @@ class Item
       end
       elements << '  <span class="raw-toggle" onclick="toggleDisplay(this.parentNode.getElementsByClassName(\'raw\')[0]);">Toggle raw info</span>'
       elements << '  <div class="raw">'
-      elements << body.inner_html
+      elements << body.inner_html.strip
       elements << '  </div>'
       elements << '</div>'
     else

@@ -1,20 +1,17 @@
 require 'item'
 
 class ItemsFetcher
-  attr_accessor :doc, :items  
+  attr_accessor :doc, :items, :items_source_location
   
   def initialize
-    @doc = get_doc("http://heroes-newerth.com/items")
     @items = []
+    @items_source_location = "http://heroes-newerth.com/items"
+    @doc = get_doc(items_source_location)
   end
 
   def fetch_all
-    cache_url("http://heroes-newerth.com/items")
-    doc.xpath("/html/body/div[3]/div[9]/div/div/address").each do |item_group|
-      item_group.xpath("a").each do |i|
-        url = i.attributes['href']
-        cache_url(url)
-      end
+    doc.xpath("/html/body/div[3]/div[9]/div/div/address/a").each do |i|
+      Cache.fetch_from_url(i.attributes['href'])
     end    
   end
 

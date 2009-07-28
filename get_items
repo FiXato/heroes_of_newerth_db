@@ -1,23 +1,48 @@
 #!/usr/bin/env ruby
 require 'items_fetcher'
 
-item_fetcher = ItemsFetcher.new
-if item = ARGV.shift
-  if item == 'first'
-    item_fetcher.get_first_item
-  elsif item == 'fetch'
-    item_fetcher.fetch_all
-  else
-    item_fetcher.get_item(item)
-  end
-else
-  item_fetcher.get_items
-end
+case item = ARGV.first
+when '--help'
+  puts <<-HELPTEXT
+  Heroes of Newerth Item retrieval, by Filip H.F. "FiXato" Slagter
 
-# item_fetcher.get_item("http://heroes-newerth.com/items/sacrificial-stone")
-# item_fetcher.get_item("http://heroes-newerth.com/item/Nullstone")
-# item_fetcher.get_item("http://heroes-newerth.com/item/Restoration-Stone")
-# item_fetcher.get_item("http://heroes-newerth.com/items/storm-spirit")
-# item_fetcher.get_item("http://heroes-newerth.com/item/Puzzlebox")
-# item_fetcher.get_item("http://heroes-newerth.com/item/Ward-of-Revelation")
-puts item_fetcher.to_html
+  Example usage:
+  # get all items and store them as results/items.html:
+   ./get_items > results/items.html
+  # get a specific item:
+   ./get_items http://heroes-newerth.com/items/sacrificial-stone
+  # get a list of specific items:
+   ./get_items http://heroes-newerth.com/items/sacrificial-stone http://heroes-newerth.com/item/Nullstone http://heroes-newerth.com/item/Restoration-Stone http://heroes-newerth.com/items/storm-spirit http://heroes-newerth.com/item/Puzzlebox http://heroes-newerth.com/item/Ward-of-Revelation
+  # get the first item:
+   ./get_items first
+  # fetch/cache all the items:
+   ./get_items fetch
+  # clear the cache
+   ./get_items clear_cache
+  
+  HELPTEXT
+when 'fetch', 'cache'
+  puts "Please wait while fetching all items."
+  ItemsFetcher.new.fetch_all
+  puts "Everything should be cached now."
+when 'clear_cache'
+  if Cache.clear
+    puts "Cache has been cleared."
+  else
+    puts "It seems that clearing the cache failed."
+  end
+when 'first'
+  items_fetcher = ItemsFetcher.new
+  items_fetcher.get_first_item
+  puts items_fetcher.to_html
+when nil
+  items_fetcher = ItemsFetcher.new
+  items_fetcher.get_items
+  puts items_fetcher.to_html
+else
+  items_fetcher = ItemsFetcher.new
+  ARGV.each do |item|
+    items_fetcher.get_item(item)
+  end
+  puts items_fetcher.to_html
+end

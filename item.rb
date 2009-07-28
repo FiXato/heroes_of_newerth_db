@@ -1,6 +1,7 @@
 require 'rubygems'
 require 'nokogiri'
 require 'string_patches'
+require 'cache'
 
 class Nokogiri::XML::Element
   def flattened_elements
@@ -256,24 +257,14 @@ class Item
   end
 end
 
-def cache_url(url)
-  `mkdir -p cache` unless File.exist?('cache')
-  `wget -q #{url} -O #{cache_filename_for_url(url)}`
-end
-
-def cache_filename_for_url(url)
-  @cache_filenames ||= {}
-  @cache_filenames[url] ||= filename = File.expand_path(File.join('cache',File.basename(url)))
-end
-
 def get_doc(url)
   # open(url, "User-Agent" => "Ruby/#{RUBY_VERSION}", "Referer" => "#{url}") { |f| Hpricot(f) }
   # Nokogiri::HTML(open(url, "User-Agent" => "Ruby/#{RUBY_VERSION}", "Referer" => "#{url}"))
   begin
-    Nokogiri::HTML(File.read(cache_filename_for_url(url)))
+    Nokogiri::HTML(File.read(Cache.filename_for_url(url)))
   rescue Errno::ENOENT
-    cache_url(url)
-    Nokogiri::HTML(File.read(cache_filename_for_url(url)))
+    Cache.fetch_from_url(url)
+    Nokogiri::HTML(File.read(Cache.filename_for_url(url)))
   end
 end
 # 

@@ -1,8 +1,16 @@
 require 'rubygems'
-# require 'nokogiri'
-require 'hpricot'
-require 'open-uri'
+require 'nokogiri'
 require 'string_patches'
+
+class Nokogiri::XML::Element
+  def flattened_elements
+    elements = []
+    self.traverse do |e|
+      elements << e if e.element?
+    end
+    elements
+  end
+end
 
 class Item
   attr_accessor :title, 
@@ -42,19 +50,19 @@ class Item
   end
 
   def image_url
-    @image_url ||= @body.search("/p//img").first.attributes['src']
+    @image_url ||= @body.xpath("p//img").first.attributes['src']
   end
 
   def title
-    @title ||= @body.search("/h1").inner_html
+    @title ||= @body.xpath("h1").inner_html
   end
 
   def price
-    @price ||= (@body/"//p").map{|para| price = para.inner_html.strip.gsub!(/Price:?\s*/,'')}.compact.first
+    @price ||= @body.xpath("p").map{|para| price = para.inner_html.strip.gsub!(/Price:?\s*/,'')}.compact.first
   end
 
   def value
-    @value ||= (@body/"//p").map{|para| price = para.inner_html.strip.gsub!(/Value:?\s*/,'')}.compact.first
+    @value ||= @body.xpath("p").map{|para| price = para.inner_html.strip.gsub!(/Value:?\s*/,'')}.compact.first
   end
 
   def passive_bonuses
@@ -81,13 +89,16 @@ class Item
   def death_notes
     unless @death_notes
       @death_notes = []
-      if death_notes_header = @body.search("//p//*[text()*='On Death']").first
-        active_para = death_notes_header
-        while active_para.pathname != 'p' do
-          active_para = active_para.parent
+      if death_notes_header = @body.xpath("p//text()").select{|e|e.text.include?('On Death')}.first
+        active_paragraph = death_notes_header
+        while active_paragraph.name != 'p' do
+          active_paragraph = active_paragraph.parent
         end
-        while (active_para = active_para.next_sibling) && active_para.containers.reject{|e|e.empty?} == [] do
-          active_para.inner_html.split('.').each do |note|
+        while (active_paragraph = active_paragraph.next_sibling) do
+          next if (active_paragraph.name == 'p' || active_paragraph.name == 'text') && active_paragraph.blank?
+        # while (active_para = active_para.next_sibling) && active_para.containers.reject{|e|e.empty?} == [] do
+          break if active_paragraph.flattened_elements.reject{|e|e.blank? || e.content.strip == ''}.size > 1
+          active_paragraph.inner_html.split('.').each do |note|
             @death_notes << '%s.' % note.strip
           end
         end
@@ -99,13 +110,16 @@ class Item
   def requires
     unless @requires
       @requires = []
-      if requires_header = @body.search("//p//*[text()*='Requires']").first
-        active_para = requires_header
-        while active_para.pathname != 'p' do
-          active_para = active_para.parent
+      if requires_header = @body.xpath("p//text()").select{|e|e.text.include?('Requires')}.first
+        active_paragraph = requires_header
+        while active_paragraph.name != 'p' do
+          active_paragraph = active_paragraph.parent
         end
-        while (active_para = active_para.next_sibling) && (active_para.search("a").size > 0 || (active_para.pathname == 'p' && active_para.inner_html.last_word.to_i > 0)) do
-          @requires << active_para.inner_html
+        fix_newlined_paragraph(active_paragraph)
+        while active_paragraph = active_paragraph.next_sibling do
+          next if active_paragraph.text == "\n"
+          break unless (active_paragraph.xpath("a").size > 0 || (active_paragraph.name == 'p' && active_paragraph.inner_html.last_word.to_i > 0))
+          @requires << active_paragraph.inner_html
         end
       end
     end
@@ -183,44 +197,58 @@ class Item
   private
   def cleanup_body
     @body = @body.first
-    @body.search("script").remove
-    @body.search("#hmt-widget-additional-unit-1").remove
-    @body.search("#hmt-widget-link-unit-2").remove
-    @body.search("/h1").remove
-    @body.search("img").remove
-    # @body.search("br").remove
-    @body.search("//comment()").remove
-    @body.traverse_element do |e|
-      if e.respond_to? :attributes
-        e.remove_attribute('style')
-        e.remove_attribute('class')
-        e.remove_attribute('id')
+    @body.xpath("//script").remove
+    @body.css("#hmt-widget-additional-unit-1").remove
+    @body.css("#hmt-widget-link-unit-2").remove
+    @body.xpath("//h1").remove
+    @body.xpath("//img").remove
+    # @body.xpath("//br").remove
+    @body.xpath("//comment()").remove
+    attributes_to_remove = %w[id class style]
+    @body.traverse do |e|
+      attributes_to_remove.each{|attr|e.remove_attribute(attr)}
+      e.parent.xpath('//a').remove if e.name =='strong' && e.blank?
+      e.remove if e.name == 'strong' && e.content.strip == ''
+      
+      # Fix Nullstone's
+      #  <strong>P</strong><strong>assive</strong>
+      # broken formatting
+      if e.name == 'strong' && e.next_sibling && e.next_sibling.name == 'strong'
+        e.content = '%s%s' % [e.content,e.next_sibling.content]
+        e.next_sibling.remove
       end
-      e.parent.search('a').remove if e.pathname == 'a' && e.empty?
-      e.parent.search('strong').remove if e.pathname == 'strong' && e.empty?
-      e.swap(e.inner_html) if %w[strong].include?(e.pathname) && !e.empty?
+      nil
+    end
+    nil
+  end
+
+  def fix_newlined_paragraph(active_paragraph)
+    if active_paragraph.search("br").size > 0
+      elements = []
+      active_paragraph.traverse do |e|
+        if e.name == 'br'
+          if e.next
+            elements << "<p>#{e.next.to_s.strip}</p>"
+            e.next.remove;e.remove
+          end
+        end
+      end
+      active_paragraph.after elements.join("") if elements.size > 0
     end
     nil
   end
 
   def retrieve_bonuses(needle)
     bonuses = []
-    if active_paragraph = @body.search("//p//*[text()*='#{needle}']").first
-      while active_paragraph.pathname != 'p' do
+    if active_paragraph = @body.xpath("p//text()").select{|e|e.text.include?(needle)}.first
+      while active_paragraph.name != 'p' do
         active_paragraph = active_paragraph.parent
       end
-      # Fix newlined paragraphs
-      if active_paragraph.search("br").size > 0
-        elements = []
-        active_paragraph.traverse_element do |e|
-          if e.pathname == 'br'
-            elements << "<p>#{e.next.to_s.strip}</p>" if e.next
-          end
-        end
-        elements << '<p><span class="dummy">&nbsp;</span></p>'
-        active_paragraph.after elements.join("\n")
-      end
-      while (active_paragraph = active_paragraph.next_sibling) && active_paragraph.containers.reject{|e|e.empty?} == [] do
+      fix_newlined_paragraph(active_paragraph)
+      while (active_paragraph = active_paragraph.next_sibling) do
+        next if (active_paragraph.name == 'p' || active_paragraph.name == 'text') && active_paragraph.blank?
+        break if active_paragraph.flattened_elements.reject{|e|e.blank? || e.content.strip == ''}.size > 1
+        # break if active_paragraph.containers && active_paragraph.containers.reject{|e|e.empty? or (e.attributes['class'] && e.attributes['class'].include?('dummy'))} != []
         bonuses << active_paragraph.inner_html
       end
     end
@@ -228,7 +256,29 @@ class Item
   end
 end
 
-def get_doc(url)
-  open(url, "User-Agent" => "Ruby/#{RUBY_VERSION}", "Referer" => "#{url}") { |f| Hpricot(f) }
-  # Nokogiri::HTML(open(url, "User-Agent" => "Ruby/#{RUBY_VERSION}", "Referer" => "#{url}"))
+def cache_url(url)
+  `mkdir -p cache` unless File.exist?('cache')
+  `wget -q #{url} -O #{cache_filename_for_url(url)}`
 end
+
+def cache_filename_for_url(url)
+  @cache_filenames ||= {}
+  @cache_filenames[url] ||= filename = File.expand_path(File.join('cache',File.basename(url)))
+end
+
+def get_doc(url)
+  # open(url, "User-Agent" => "Ruby/#{RUBY_VERSION}", "Referer" => "#{url}") { |f| Hpricot(f) }
+  # Nokogiri::HTML(open(url, "User-Agent" => "Ruby/#{RUBY_VERSION}", "Referer" => "#{url}"))
+  begin
+    Nokogiri::HTML(File.read(cache_filename_for_url(url)))
+  rescue Errno::ENOENT
+    cache_url(url)
+    Nokogiri::HTML(File.read(cache_filename_for_url(url)))
+  end
+end
+# 
+# def p(*args)
+#   puts '<pre>'
+#   super(*args)
+#   puts '</pre>'
+# end

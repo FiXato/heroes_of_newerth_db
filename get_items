@@ -5,6 +5,8 @@ item_fetcher = ItemsFetcher.new
 if item = ARGV.shift
   if item == 'first'
     item_fetcher.get_first_item
+  elsif item == 'fetch'
+    item_fetcher.fetch_all
   else
     item_fetcher.get_item(item)
   end

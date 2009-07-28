@@ -8,18 +8,28 @@ class ItemsFetcher
     @items = []
   end
 
+  def fetch_all
+    cache_url("http://heroes-newerth.com/items")
+    doc.xpath("/html/body/div[3]/div[9]/div/div/address").each do |item_group|
+      item_group.xpath("a").each do |i|
+        url = i.attributes['href']
+        cache_url(url)
+      end
+    end    
+  end
+
   def get_item(url)
     @items << Item.new(url)
   end
 
   def get_first_item
-    i = (doc/"/html/body/div[3]/div[9]/div/div/address//a").first
+    i = doc.xpath("/html/body/div[3]/div[9]/div/div/address/a").first
     get_item(i.attributes['href'])
   end
 
   def get_items
-    (doc/"/html/body/div[3]/div[9]/div/div/address").each do |item_group|
-      item_group.search("/a").each do |i|
+    doc.xpath("/html/body/div[3]/div[9]/div/div/address").each do |item_group|
+      item_group.xpath("a").each do |i|
         get_item(i.attributes['href'])
       end
     end

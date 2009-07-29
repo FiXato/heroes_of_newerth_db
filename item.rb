@@ -97,7 +97,6 @@ class Item
         end
         while (active_paragraph = active_paragraph.next_sibling) do
           next if (active_paragraph.name == 'p' || active_paragraph.name == 'text') && active_paragraph.blank?
-        # while (active_para = active_para.next_sibling) && active_para.containers.reject{|e|e.empty?} == [] do
           break if active_paragraph.flattened_elements.reject{|e|e.blank? || e.content.strip == ''}.size > 1
           active_paragraph.inner_html.split('.').each do |note|
             @death_notes << '%s.' % note.strip
@@ -203,7 +202,6 @@ class Item
     @body.css("#hmt-widget-link-unit-2").remove
     @body.xpath("//h1").remove
     @body.xpath("//img").remove
-    # @body.xpath("//br").remove
     @body.xpath("//comment()").remove
     attributes_to_remove = %w[id class style]
     @body.traverse do |e|
@@ -249,7 +247,6 @@ class Item
       while (active_paragraph = active_paragraph.next_sibling) do
         next if (active_paragraph.name == 'p' || active_paragraph.name == 'text') && active_paragraph.blank?
         break if active_paragraph.flattened_elements.reject{|e|e.blank? || e.content.strip == ''}.size > 1
-        # break if active_paragraph.containers && active_paragraph.containers.reject{|e|e.empty? or (e.attributes['class'] && e.attributes['class'].include?('dummy'))} != []
         bonuses << active_paragraph.inner_html
       end
     end
@@ -258,8 +255,6 @@ class Item
 end
 
 def get_doc(url)
-  # open(url, "User-Agent" => "Ruby/#{RUBY_VERSION}", "Referer" => "#{url}") { |f| Hpricot(f) }
-  # Nokogiri::HTML(open(url, "User-Agent" => "Ruby/#{RUBY_VERSION}", "Referer" => "#{url}"))
   begin
     Nokogiri::HTML(File.read(Cache.filename_for_url(url)))
   rescue Errno::ENOENT

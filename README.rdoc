@@ -2,23 +2,24 @@
 
 == Item and Item Fetcher
 
-This currently retrieves all the items and their details from http://heroes-newerth.com/items and tries to parse the relevant stats from the detail pages.
+This currently retrieves all the items and their details from http://heroes-newerth.com/items, stores them locally in the ./cache directory and tries to parse the relevant stats from the detail pages.
 Since the source is a WordPress blog, the structure of the documents and their formatting isn't consistent, which makes it harder to parse the details.
 As a result of this, there is quite some hacky code in the item parser, and some details are still missing.
 
 === Usage
 
-To get a list of all items and save them as an HTML file, run the following from the command line:
-
- ./get_items > items.html
-
-To get the first item, run the following from the command line:
-
- ./get_items first
-
-And to get a specific item, find its detail page url and feed it as such:
-
+* get all items and store them as results/items.html:
+ ./get_items > results/items.html
+* get a specific item:
  ./get_items http://heroes-newerth.com/items/sacrificial-stone
+* get a list of specific items:
+ ./get_items http://heroes-newerth.com/items/sacrificial-stone http://heroes-newerth.com/item/Nullstone http://heroes-newerth.com/item/Restoration-Stone http://heroes-newerth.com/items/storm-spirit http://heroes-newerth.com/item/Puzzlebox http://heroes-newerth.com/item/Ward-of-Revelation
+* get the first item:
+ ./get_items first
+* fetch/cache all the items:
+ ./get_items fetch
+* clear the cache
+ ./get_items clear_cache
 
 
 === ToDo

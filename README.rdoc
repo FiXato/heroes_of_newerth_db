@@ -1,5 +1,8 @@
 = Heroes of Newerth Database
 
+== Discontinuation notice
+I haven't played this game in a long time, and this project likely hasn't worked for just as long, so it will be archived.
+
 == Item and Item Fetcher
 
 This currently retrieves all the items and their details from http://heroes-newerth.com/items, stores them locally in the ./cache directory and tries to parse the relevant stats from the detail pages.
